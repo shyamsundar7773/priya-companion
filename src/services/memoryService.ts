@@ -2,11 +2,30 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import {
     Memory,
+    MemoryCategory,
     MemoryType,
 } from "../types/memory";
 
 const MEMORY_STORAGE_KEY =
   "@priya_companion_memories";
+
+const inMemoryFallbackStore = new Map<string, string>();
+
+async function getStorageItem(key: string): Promise<string | null> {
+  try {
+    return await AsyncStorage.getItem(key);
+  } catch {
+    return inMemoryFallbackStore.get(key) ?? null;
+  }
+}
+
+async function setStorageItem(key: string, value: string): Promise<void> {
+  try {
+    await AsyncStorage.setItem(key, value);
+  } catch {
+    inMemoryFallbackStore.set(key, value);
+  }
+}
 
 /* ============================================================
    GET ALL MEMORIES
@@ -15,7 +34,7 @@ const MEMORY_STORAGE_KEY =
 export async function getMemories(): Promise<Memory[]> {
   try {
     const stored =
-      await AsyncStorage.getItem(
+      await getStorageItem(
         MEMORY_STORAGE_KEY
       );
 
@@ -61,11 +80,11 @@ export async function getCharacterMemories(
    SAVE ALL MEMORIES
    ============================================================ */
 
-async function saveMemories(
+export async function saveMemories(
   memories: Memory[]
 ): Promise<void> {
   try {
-    await AsyncStorage.setItem(
+    await setStorageItem(
       MEMORY_STORAGE_KEY,
       JSON.stringify(memories)
     );
@@ -86,7 +105,12 @@ export async function addMemory(
   type: MemoryType,
   content: string,
   importance = 0.5,
-  confidence = 0.5
+  confidence = 0.5,
+  options?: {
+    category?: MemoryCategory;
+    metadata?: Record<string, any>;
+    updatedAt?: number;
+  }
 ): Promise<Memory> {
 
   const memories =
@@ -108,6 +132,17 @@ export async function addMemory(
 
     existing.lastUsedAt =
       Date.now();
+
+    if (options?.category) {
+      existing.category = options.category;
+    }
+
+    if (options?.metadata) {
+      existing.metadata = {
+        ...existing.metadata,
+        ...options.metadata,
+      };
+    }
 
     await saveMemories(memories);
 
@@ -132,6 +167,12 @@ export async function addMemory(
     createdAt: Date.now(),
 
     lastUsedAt: Date.now(),
+
+    updatedAt: options?.updatedAt,
+
+    category: options?.category,
+
+    metadata: options?.metadata,
   };
 
   memories.push(memory);
@@ -231,3 +272,12 @@ export async function testMemorySystem(): Promise<void> {
     memories
   );
 }
+
+/* ============================================================
+   CLEAR ALL MEMORIES (TEST / RESET)
+   ============================================================ */
+
+export async function clearAllMemories(): Promise<void> {
+  inMemoryFallbackStore.clear();
+  await saveMemories([]);
+}

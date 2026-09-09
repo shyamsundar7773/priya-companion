@@ -5,7 +5,17 @@ export type MemoryType =
   | "goal"
   | "interest"
   | "relationship"
-  | "context";
+  | "context"
+  | "event"
+  | "episodic"
+  | "semantic";
+
+export type MemoryCategory =
+  | "episodic"
+  | "semantic"
+  | "preference"
+  | "event"
+  | "fact";
 
 export type Memory = {
   id: string;
@@ -23,4 +33,10 @@ export type Memory = {
   createdAt: number;
 
   lastUsedAt?: number;
+
+  updatedAt?: number;
+
+  category?: MemoryCategory;
+
+  metadata?: Record<string, any>;
 };

@@ -29,6 +29,9 @@ const MEMORY_TYPE_WEIGHTS: Record<Memory["type"], number> = {
   habit: 0.75,
   context: 0.65,
   fact: 0.6,
+  event: 0.85,
+  episodic: 0.85,
+  semantic: 0.7,
 };
 
 /* ============================================================
